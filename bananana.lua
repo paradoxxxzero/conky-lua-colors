@@ -26,61 +26,73 @@ local banananas = {
    {
       color = "ec1a23",
       measure = "${memperc}",
+      text = "Mem: ",
       max = 100
    },
    {
       color = "f88e20",
-      measure = "${cpu}",
+      measure = "${battery_percent BAT0}",
+      text = "Bat: ",
       max = 100
    },
    {
       color = "ffe200",
       measure = "${cpu cpu0}",
+      text = "Cpu0: ",
       max = 100
    },
    {
       color = "b6d037",
       measure = "${cpu cpu1}",
+      text = "Cpu1: ",
       max = 100
    },
    {
       color = "10b147",
       measure = "${swapperc}",
+      text = "Swap: ",
       max = 100
    },
    {
       color = "01a77b",
       measure = "${fs_used_perc /}",
+      text = "Root: ",
       max = 100
    },
    {
       color = "00a9c2",
       measure = "${fs_used_perc /home}",
+      text = "Home: ",
       max = 100
    },
    {
       color = "0096d9",
       measure = "${time %S}",
+      text = "s: ",
       max = 60
    },
    { 
       color = "025dae",
       measure = "${time %M}",
+      text = "m: ",
       max = 60
    },
    {
       color = "482e8b",
       measure = "${time %H}",
+      text = "h: ",
       max = 24
    },
    {
       color = "96248c",
       measure = "${time %d}",
+      text = "d: ",
       max = 31
    },
    {
       color = "f2008d",
       measure = "${time %m}",
+      text = "m: ",
       max = 12
    }
 }
@@ -93,7 +105,8 @@ function unpack_rgb(colorStr, a)
 	  a
 end
 
-function bananana(cr, scale, rotation, color, perc, max)
+function bananana(cr, scale, rotation, color, perc, max, text)
+   if perc == nil or perc == "" then return end
    local w = 12
    local a0, a1, af = - math.pi / 2, math.pi, math.pi * (perc / max)
    local r = 250
@@ -112,9 +125,25 @@ function bananana(cr, scale, rotation, color, perc, max)
    cairo_arc_negative(cr, - w, -w, r - w, a1, a0)
    cairo_fill(cr)
    cairo_restore(cr)
-   cairo_save(cr)
 
+   cairo_save(cr)
+   cairo_new_sub_path(cr)
+   cairo_move_to(cr, -60, -r + 25)
+   cairo_select_font_face(cr, "monofur", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
+   cairo_set_font_size(cr, 20)
+   cairo_set_operator(cr, CAIRO_OPERATOR_ADD)
+   cairo_set_source_rgba(cr, unpack_rgb(color, .4))
+   local txt = text..perc
+   if max == 100 then
+      txt = txt.."%"
+   end
+   cairo_show_text(cr, txt)
+   cairo_restore(cr)
+  
+   cairo_save(cr)
+   cairo_new_sub_path(cr)
    local pattern = cairo_pattern_create_radial (0, 0, r - w, 0, 0, r)
+   -- cairo_set_operator(cr, CAIRO_OPERATOR_ADD)
    cairo_pattern_add_color_stop_rgba (pattern, 0, unpack_rgb(color, .9))
    cairo_pattern_add_color_stop_rgba (pattern, 1, unpack_rgb(color, .4))
    cairo_set_source(cr, pattern)
@@ -139,19 +168,15 @@ function conky_bananana()
    local pi = math.pi
    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE)
    cairo_translate(cr, w/2, h/2) -- centering
---   angle0 = angle0 + 0.02
+--   angle0 = angle0 + 0.01
    local angle = angle0
    local scale = 1.2
    for i,banana in pairs(banananas) do
-      bananana(cr, scale, angle, banana.color, conky_parse(banana.measure), banana.max)
+      bananana(cr, scale, angle, banana.color, conky_parse(banana.measure), banana.max, banana.text)
       angle = angle + pi/6
       scale = scale + (1 -  scale) * 0.09 - 0.095
    end
 
-  -- cairo_move_to(cr, 310, 285)
-  -- cairo_select_font_face(cr, "monofur", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
-  -- cairo_set_font_size(cr, 48)
-  -- cairo_show_text(cr, "CPU: "..cpu)
   
    cairo_destroy(cr)
    cr = nil
