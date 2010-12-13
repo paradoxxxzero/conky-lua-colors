@@ -108,7 +108,7 @@ end
 function bananana(cr, scale, rotation, color, perc, max, text)
    if perc == nil or perc == "" then return end
    local w = 12
-   local a0, a1, af = - math.pi / 2, math.pi, math.pi * (perc / max)
+   local a0, a1, af = - math.pi / 2, math.pi, -math.pi / 2 + (3 * math.pi / 2)  * (perc / max)
    local r = 250
 
    cairo_save(cr)
