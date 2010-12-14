@@ -13,11 +13,11 @@ no_buffers yes
 text_buffer_size 2048
 imlib_cache_size 0
 
-temperature_unit fahrenheit
+temperature_unit celsius
 
 # — Window specifications — #
 
-own_window no
+own_window yes
 own_window_type override
 own_window_transparent yes
 #own_window_hints undecorate,sticky,skip_taskbar,skip_pager,below
