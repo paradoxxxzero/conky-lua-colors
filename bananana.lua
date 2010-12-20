@@ -1,26 +1,24 @@
 --[[
-   
-    conky-lua-colors:  An eye candy conky lua script
 
-    Copyright (C) 2010 Mounier Florian aka paradoxxxzero
+conky-lua-colors:  An eye candy conky lua script
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Affero General Public License as
-    published by the Free Software Foundation, either version 3 of the
-    License, or any later version.
+Copyright (C) 2010 Mounier Florian aka paradoxxxzero
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Affero General Public License for more details.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or any later version.
 
-    You should have received a copy of the GNU Affero General Public License
-    along with this program.  If not, see http://www.gnu.org/licenses/.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
 ]]--
 
 require 'cairo'
-
-cs, cr = nil -- initialize our cairo surface and context to nil
 
 local banananas = {
    {
@@ -97,22 +95,24 @@ local banananas = {
    }
 }
 
-function unpack_rgb(colorStr, a)
+local function unpack_rgb(colorStr, a)
    local color = tonumber("0x"..colorStr)
    return ((color / 0x10000) % 0x100) / 255, 
-          ((color / 0x100) % 0x100) / 255,
-	  (color % 0x100) / 255,
-	  a
+   ((color / 0x100) % 0x100) / 255,
+   (color % 0x100) / 255,
+   a
 end
 
-function bananana(cr, scale, rotation, color, perc, max, text)
-   if perc == nil or perc == "" then return end
+local function bananana(cr, scale, rotation, color, perc, max, text)
+   if perc == nil then return end
    local w = 12
-   local a0, a1, af = - math.pi / 2, math.pi, -math.pi / 2 + (3 * math.pi / 2)  * (perc / max)
+   local q = 0
+   -- Protecting the string to number conversion
+   if(not pcall(function () q = perc / max end)) then return end 
+   local a0, a1, af = - math.pi / 2, math.pi, -math.pi / 2 + (3 * math.pi / 2)  * q
    local r = 250
 
    cairo_save(cr)
-
    cairo_scale(cr, scale, scale)
    cairo_rotate(cr, rotation)
 
@@ -121,6 +121,7 @@ function bananana(cr, scale, rotation, color, perc, max, text)
    cairo_pattern_add_color_stop_rgba (pattern_back, 0, unpack_rgb(color, .6))
    cairo_pattern_add_color_stop_rgba (pattern_back, 1, unpack_rgb(color, .4))
    cairo_set_source(cr, pattern_back)
+   cairo_pattern_destroy(pattern_back)
    cairo_arc(cr, 0, 0, r, a0, a1)
    cairo_arc_negative(cr, - w, -w, r - w, a1, a0)
    cairo_fill(cr)
@@ -139,14 +140,14 @@ function bananana(cr, scale, rotation, color, perc, max, text)
    end
    cairo_show_text(cr, txt)
    cairo_restore(cr)
-  
+   
    cairo_save(cr)
    cairo_new_sub_path(cr)
    local pattern = cairo_pattern_create_radial (0, 0, r - w, 0, 0, r)
-   -- cairo_set_operator(cr, CAIRO_OPERATOR_ADD)
    cairo_pattern_add_color_stop_rgba (pattern, 0, unpack_rgb(color, .9))
    cairo_pattern_add_color_stop_rgba (pattern, 1, unpack_rgb(color, .4))
    cairo_set_source(cr, pattern)
+   cairo_pattern_destroy(pattern)
    cairo_arc(cr, 0, 0, r, a0, af)
    cairo_arc_negative(cr, - w, -w, r - w, af, a0)
    cairo_fill(cr)
@@ -155,7 +156,7 @@ function bananana(cr, scale, rotation, color, perc, max, text)
    cairo_restore(cr)
 end
 
-local angle0 = 0
+cs, cr = nil -- initialize our cairo surface and context to nil
 function conky_bananana()
    if conky_window == nil then return end
    if cs == nil or cairo_xlib_surface_get_width(cs) ~= conky_window.width or cairo_xlib_surface_get_height(cs) ~= conky_window.height then
@@ -168,16 +169,19 @@ function conky_bananana()
    local pi = math.pi
    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE)
    cairo_translate(cr, w/2, h/2) -- centering
---   angle0 = angle0 + 0.01
-   local angle = angle0
+   local angle = 0
    local scale = 1.2
    for i,banana in pairs(banananas) do
       bananana(cr, scale, angle, banana.color, conky_parse(banana.measure), banana.max, banana.text)
       angle = angle + pi/6
       scale = scale + (1 -  scale) * 0.09 - 0.095
    end
-
-  
    cairo_destroy(cr)
    cr = nil
+end
+
+-- as seen on the conky wiki, but seems to be never called
+function conky_cairo_cleanup()
+    cairo_surface_destroy(cs)
+    cs = nil
 end
